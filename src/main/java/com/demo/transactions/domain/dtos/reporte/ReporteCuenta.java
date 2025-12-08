@@ -1,0 +1,16 @@
+package com.demo.transactions.domain.dtos.reporte;
+
+
+
+import lombok.Data;
+import java.math.BigDecimal;
+import java.util.List;
+
+@Data
+public class ReporteCuenta {
+    private String numeroCuenta;
+    private String tipoCuenta;
+    private BigDecimal saldoActual;
+    private boolean estado;
+    private List<ReporteMovimiento> movimientos;
+}

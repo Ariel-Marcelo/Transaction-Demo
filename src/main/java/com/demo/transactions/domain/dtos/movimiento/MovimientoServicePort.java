@@ -1,0 +1,18 @@
+package com.demo.transactions.domain.dtos.movimiento;
+
+import com.demo.transactions.domain.dtos.movimiento.requests.MovimientoRequest;
+import com.demo.transactions.domain.dtos.movimiento.responses.MovimientoResponse;
+
+import java.util.List;
+
+public interface MovimientoServicePort {
+
+    MovimientoResponse create(MovimientoRequest movimientoRequest);
+
+    List<MovimientoResponse> getAll();
+
+    MovimientoResponse getById(Long id);
+
+    void delete(Long id);
+
+}
