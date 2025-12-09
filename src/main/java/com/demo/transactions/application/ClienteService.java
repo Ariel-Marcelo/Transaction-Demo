@@ -3,11 +3,13 @@ package com.demo.transactions.application;
 import com.demo.transactions.domain.dtos.cliente.ClienteMapper;
 import com.demo.transactions.domain.dtos.cliente.ClienteRepositoryPort;
 import com.demo.transactions.domain.dtos.cliente.ClienteServicePort;
+import com.demo.transactions.domain.dtos.cliente.events.ClienteCreatedEvent;
 import com.demo.transactions.domain.dtos.cliente.requests.ClienteRequest;
 import com.demo.transactions.domain.dtos.cliente.responses.ClienteResponse;
 import com.demo.transactions.domain.models.Cliente;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,10 +22,20 @@ public class ClienteService implements ClienteServicePort {
 
     private final ClienteRepositoryPort repository;
 
+    private final ApplicationEventPublisher eventPublisher;
+
     @Override
-    public ClienteResponse create(ClienteRequest clienteRequest) {
-        var user = ClienteMapper.INSTANCE.toEntity(clienteRequest);
-        return ClienteMapper.INSTANCE.toResponse(repository.save(user));
+    public ClienteResponse create(ClienteRequest request) {
+        Cliente cliente = ClienteMapper.INSTANCE.toEntity(request);
+        cliente = repository.save(cliente);
+
+        eventPublisher.publishEvent(new ClienteCreatedEvent(
+                cliente.getId(),
+                cliente.getClienteId(),
+                cliente.getNombre()
+        ));
+
+        return ClienteMapper.INSTANCE.toResponse(cliente);
     }
 
     @Override
