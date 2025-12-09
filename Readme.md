@@ -28,11 +28,15 @@ La forma más rápida de levantar el entorno completo (Base de datos + Microserv
 
 ```bash
 docker-compose up --build
+```
+
 
 ## Ejecución con Maven
 
 ```bash
+## Correr Solución
 mvn spring-boot:run
 
-```bash
+## Correr Pruebas
 mvn test
+```
