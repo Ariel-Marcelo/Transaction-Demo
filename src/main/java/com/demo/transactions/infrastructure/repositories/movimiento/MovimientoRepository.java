@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -34,5 +35,10 @@ public class MovimientoRepository implements MovimientoRepositoryPort {
     @Override
     public List<Movimiento> getMovimientosByCuentaAndFechaOrderDesc(Long cuentaId, LocalDateTime inicio, LocalDateTime fin) {
         return jpaRepository.findByCuentaIdAndFechaBetweenOrderByFechaDesc(cuentaId, inicio, fin);
+    }
+
+    @Override
+    public Optional<Movimiento> findLastByCuentaId(Long cuentaId) {
+        return jpaRepository.findTopByCuenta_IdOrderByIdDesc(cuentaId);
     }
 }

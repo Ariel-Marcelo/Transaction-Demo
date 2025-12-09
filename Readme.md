@@ -40,3 +40,9 @@ mvn spring-boot:run
 ## Correr Pruebas
 mvn test
 ```
+
+## Notas
+
+La creación o actualización de una cuenta desencadenara un registro de movimiento para mantener el histórico de las transacciones
+Un movimiento no puede ser eliminado, solo reversado lo que implica generar otro movimiento automático que se contraponga al reversado
+Un movimiento solo puede ser actualizado si es el último realizado en la cuenta para que mantenga el histórico de transacciones

@@ -5,7 +5,6 @@ import com.demo.transactions.domain.dtos.movimiento.requests.MovimientoRequest;
 import com.demo.transactions.domain.dtos.movimiento.responses.MovimientoResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -55,8 +54,11 @@ public class MovimientoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String > update(@PathVariable Long id, @RequestBody @Valid MovimientoRequest request) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body("No se puede permitir editar un movimiento");
+    public ResponseEntity<MovimientoResponse> update(
+            @PathVariable Long id,
+            @RequestBody @Valid MovimientoRequest request) {
+
+        MovimientoResponse updatedMovimiento = movimientoService.update(id, request);
+        return ResponseEntity.ok(updatedMovimiento);
     }
 }

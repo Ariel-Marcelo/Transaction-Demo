@@ -15,4 +15,6 @@ public interface MovimientoServicePort {
 
     void delete(Long id);
 
+    MovimientoResponse update(Long id, MovimientoRequest request);
+
 }

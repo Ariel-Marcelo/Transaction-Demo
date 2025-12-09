@@ -4,6 +4,7 @@ import com.demo.transactions.domain.models.Movimiento;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface MovimientoRepositoryPort {
 
@@ -15,4 +16,5 @@ public interface MovimientoRepositoryPort {
 
     List<Movimiento> getMovimientosByCuentaAndFechaOrderDesc(Long cuentaId, LocalDateTime inicio, LocalDateTime fin);
 
+    Optional<Movimiento> findLastByCuentaId(Long cuentaId);
 }

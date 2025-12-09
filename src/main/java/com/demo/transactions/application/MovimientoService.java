@@ -9,6 +9,7 @@ import com.demo.transactions.domain.dtos.movimiento.responses.MovimientoResponse
 import com.demo.transactions.domain.exceptions.LowBalanceException;
 import com.demo.transactions.domain.models.Cuenta;
 import com.demo.transactions.domain.models.Movimiento;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -75,19 +76,19 @@ public class MovimientoService implements MovimientoServicePort {
 
     @Override
     public void delete(Long id) {
-        Movimiento movimientoOriginal = movimientoRepository.getMovimientosById(id);
-        Cuenta cuenta = movimientoOriginal.getCuenta();
+        Movimiento originalMovement = movimientoRepository.getMovimientosById(id);
+        Cuenta cuenta = originalMovement.getCuenta();
 
         String nuevoTipo;
-        if ("Retiro".equalsIgnoreCase(movimientoOriginal.getTipoMovimiento())) {
+        if ("Retiro".equalsIgnoreCase(originalMovement.getTipoMovimiento())) {
             nuevoTipo = "Deposito";
-        } else if ("Deposito".equalsIgnoreCase(movimientoOriginal.getTipoMovimiento())) {
+        } else if ("Deposito".equalsIgnoreCase(originalMovement.getTipoMovimiento())) {
             nuevoTipo = "Retiro";
         } else {
             throw new IllegalArgumentException("No puede reversar una transacción que ya ha sido reversada");
         }
 
-        BigDecimal balanceValue = movimientoOriginal.getValor().negate();
+        BigDecimal balanceValue = originalMovement.getValor().negate();
 
         BigDecimal oldMovementValue = cuenta.getSaldoInicial().add(balanceValue);
 
@@ -104,8 +105,54 @@ public class MovimientoService implements MovimientoServicePort {
 
         cuenta.setSaldoInicial(oldMovementValue);
         cuentaRepository.save(cuenta);
-        movimientoOriginal.setTipoMovimiento("Reversado");
-        movimientoRepository.save(movimientoOriginal);
+        originalMovement.setTipoMovimiento("Reversado");
+        movimientoRepository.save(originalMovement);
         movimientoRepository.save(balanceMovement);
+    }
+
+    @Override
+    public MovimientoResponse update(Long id, MovimientoRequest request) {
+        Movimiento originalMovement = movimientoRepository.getMovimientosById(id);
+        Long cuentaId = originalMovement.getCuenta().getId();
+
+        Movimiento ultimoMovimiento = movimientoRepository.findLastByCuentaId(cuentaId)
+                .orElseThrow(() -> new EntityNotFoundException("No se encontraron movimientos para validar."));
+
+        if (!originalMovement.getId().equals(ultimoMovimiento.getId())) {
+            throw new IllegalArgumentException("Solo se permite editar el último movimiento de la cuenta para mantener la consistencia del saldo histórico.");
+        }
+
+        if ("Reversado".equalsIgnoreCase(originalMovement.getTipoMovimiento())) {
+            throw new IllegalArgumentException("No se puede editar un movimiento que ya ha sido reversado.");
+        }
+
+        if (!originalMovement.getTipoMovimiento().equalsIgnoreCase(request.getTipoMovimiento())) {
+            throw new IllegalArgumentException("No se permite cambiar el tipo de movimiento. Solo se puede ajustar el valor.");
+        }
+
+        Cuenta cuenta = originalMovement.getCuenta();
+
+        BigDecimal saldoSinMovimientoPrevio = cuenta.getSaldoInicial().subtract(originalMovement.getValor());
+
+        BigDecimal nuevoValor = request.getValor();
+        if ("Retiro".equalsIgnoreCase(request.getTipoMovimiento())) {
+            nuevoValor = nuevoValor.negate();
+        }
+
+        BigDecimal nuevoSaldoFinal = saldoSinMovimientoPrevio.add(nuevoValor);
+
+        if (nuevoSaldoFinal.compareTo(BigDecimal.ZERO) < 0) {
+            throw new LowBalanceException("Saldo insuficiente para realizar esta actualización.");
+        }
+
+
+        cuenta.setSaldoInicial(nuevoSaldoFinal);
+        cuentaRepository.save(cuenta);
+
+        originalMovement.setFecha(java.time.LocalDateTime.now());
+        originalMovement.setValor(nuevoValor);
+        originalMovement.setSaldo(nuevoSaldoFinal);
+
+        return MovimientoMapper.INSTANCE.toResponse(movimientoRepository.save(originalMovement));
     }
 }
