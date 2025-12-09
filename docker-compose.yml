@@ -4,30 +4,38 @@ services:
   postgres-db:
     image: postgres:15-alpine
     container_name: bank-postgres
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: transactions_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: adminpassword
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: admin
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bank-network
   bank-app:
     build: .
     container_name: bank-api
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://bank-postgres:5432/transactions_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/transactions_db
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: adminpassword
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
     networks:
       - bank-network
-    restart: on-failure
 
   pgadmin:
     image: dpage/pgadmin4
